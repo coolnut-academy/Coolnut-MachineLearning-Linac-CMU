@@ -123,6 +123,7 @@
         .topic-head { font-weight: bold; color: var(--primary-color); font-size: 0.95rem; margin-top: 15px; display: block; }
         .topic-content { font-size: 0.9rem; margin-bottom: 5px; color: #333; text-align: left; }
         .ref-box { background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 15px; font-size: 0.85rem; border-left: 3px solid #ccc; }
+        
         .btn-link {
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             margin-top: 20px; padding: 10px 0; width: 100%;
@@ -132,22 +133,64 @@
         }
         .btn-link:hover { background: var(--primary-color); color: white; }
 
-        /* --- NEW Scientific Visuals Containers --- */
+        /* --- Visual Plot Containers --- */
         .visual-plot-container {
-            height: 250px; /* Increased height for better plots */
+            height: 280px;
             background: #ffffff;
             margin: 10px 0;
             border-radius: 8px;
             border: 1px solid #eee;
-            overflow: hidden;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease-in-out;
         }
-        /* Loading placeholder */
-        .visual-plot-container::before {
-             content: 'Loading Simulation...'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 0.8rem; z-index: 0;
-        }
-        .plotly-graph-div { position: relative; z-index: 1; height: 100%; width: 100%; }
 
+        /* Fullscreen Mode Class */
+        .visual-plot-container.fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10000;
+            border-radius: 0;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .plotly-graph-div { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
+
+        /* Expand Button */
+        .btn-expand {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 20;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 10px;
+            color: #555;
+            transition: 0.2s;
+        }
+        .btn-expand:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        /* Plot Caption */
+        .plot-caption {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 5px;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+            font-family: 'Prompt', sans-serif;
+        }
 
         /* Tables & Opinion */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-top: 20px; }
@@ -193,8 +236,10 @@
                 </div>
                 <span class="suitability">(เหมาะที่สุดสำหรับช่วงที่เครื่องยังรันไม่สมบูรณ์)</span>
                 
-                <div class="visual-plot-container">
+                <div class="visual-plot-container" id="container1">
+                    <button class="btn-expand" onclick="toggleFullscreen('container1', 'plot1')"><i class="fas fa-expand"></i></button>
                     <div id="plot1" class="plotly-graph-div"></div>
+                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: การกระจายตัวของอนุภาคใน Phase Space ที่ทำนายโดย ML</div>
                 </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
@@ -216,8 +261,10 @@
                 <h3>2. Optimization</h3>
                 <span class="suitability">(เหมาะสำหรับช่วยลดภาระการจูนเครื่อง)</span>
                 
-                <div class="visual-plot-container">
+                <div class="visual-plot-container" id="container2">
+                    <button class="btn-expand" onclick="toggleFullscreen('container2', 'plot2')"><i class="fas fa-expand"></i></button>
                     <div id="plot2" class="plotly-graph-div"></div>
+                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: พื้นผิวความคลาดเคลื่อนที่ AI กำลังค้นหาจุดต่ำสุด (Minimum)</div>
                 </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
@@ -239,8 +286,10 @@
                 <h3>3. Anomaly Detection</h3>
                 <span class="suitability">(เหมาะสำหรับงานดูแลระบบในระยะยาว)</span>
                 
-                <div class="visual-plot-container">
+                <div class="visual-plot-container" id="container3">
+                    <button class="btn-expand" onclick="toggleFullscreen('container3', 'plot3')"><i class="fas fa-expand"></i></button>
                     <div id="plot3" class="plotly-graph-div"></div>
+                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: สัญญาณ BPM และการตรวจจับความผิดปกติ (พื้นที่สีแดง)</div>
                 </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
@@ -301,6 +350,30 @@
     <button id="backToTop" onclick="topFunction()"><i class="fas fa-arrow-up"></i></button>
 
     <script>
+        // --- Fullscreen Toggle Logic ---
+        function toggleFullscreen(containerId, plotId) {
+            const container = document.getElementById(containerId);
+            const btn = container.querySelector('.btn-expand i');
+            const graphDiv = document.getElementById(plotId);
+            
+            container.classList.toggle('fullscreen-mode');
+            
+            if (container.classList.contains('fullscreen-mode')) {
+                btn.classList.remove('fa-expand');
+                btn.classList.add('fa-compress');
+                document.body.style.overflow = 'hidden'; // Stop background scrolling
+            } else {
+                btn.classList.remove('fa-compress');
+                btn.classList.add('fa-expand');
+                document.body.style.overflow = 'auto';
+            }
+
+            // Force Plotly to resize to the new container size
+            setTimeout(() => {
+                Plotly.Plots.resize(graphDiv);
+            }, 50);
+        }
+
         // --- UI Scripts ---
         const hamburger = document.querySelector(".hamburger");
         const navMenu = document.querySelector(".nav-menu");
@@ -328,112 +401,76 @@
 
         // --- Scientific Plots (Plotly.js) ---
 
-        // Plot 1: Phase Space (Virtual Diagnostics)
+        // Plot 1: Phase Space
         const trace1 = {
             x: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
             y: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
-            mode: 'markers',
-            type: 'scatter',
+            mode: 'markers', type: 'scatter',
             marker: { size: 3, color: '#0d47a1', opacity: 0.5 }
         };
         const layout1 = {
-            title: { text: 'Predicted Phase Space (X vs X\')', font: { size: 14 } },
-            margin: { t: 40, b: 40, l: 40, r: 20 },
-            xaxis: { title: 'Position (X)', showgrid: true, zeroline: true },
-            yaxis: { title: 'Angle (X\')', showgrid: true, zeroline: true },
+            title: { text: 'Phase Space (X vs X\')', font: { size: 14 } },
+            margin: { t: 30, b: 30, l: 30, r: 20 },
+            xaxis: { zeroline: true }, yaxis: { zeroline: true },
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
         };
         Plotly.newPlot('plot1', [trace1], layout1, {responsive: true, displayModeBar: false});
 
-        // Animate Plot 1 (Rotation simulation)
         let angle = 0;
         function animatePlot1() {
             angle += 0.05;
             const newX = trace1.x.map((x, i) => x * Math.cos(angle) - trace1.y[i] * Math.sin(angle));
             const newY = trace1.x.map((x, i) => x * Math.sin(angle) + trace1.y[i] * Math.cos(angle));
-            Plotly.animate('plot1', {
-                data: [{x: newX, y: newY}]
-            }, {
-                transition: {duration: 0}, frame: {duration: 50, redraw: false}
-            });
+            Plotly.animate('plot1', { data: [{x: newX, y: newY}] }, { transition: {duration: 0}, frame: {duration: 50, redraw: false} });
             requestAnimationFrame(animatePlot1);
         }
         animatePlot1();
 
 
-        // Plot 2: 3D Optimization Landscape
+        // Plot 2: 3D Optimization
         const size = 20, x = new Array(size), y = new Array(size), z = new Array(size);
+        for(var i = 0; i < size; i++) { x[i] = i - size/2; y[i] = i - size/2; z[i] = new Array(size); }
         for(var i = 0; i < size; i++) {
-            x[i] = i - size/2;
-            y[i] = i - size/2;
-            z[i] = new Array(size);
+            for(var j = 0; j < size; j++) { z[i][j] = (x[i]*x[i] + y[j]*y[j]) / 50 + Math.random()*0.5; }
         }
-        for(var i = 0; i < size; i++) {
-            for(var j = 0; j < size; j++) {
-                // Paraboloid valley function representing Emittance
-                z[i][j] = (x[i]*x[i] + y[j]*y[j]) / 50 + Math.random()*0.5;
-            }
-        }
-        const data2 = [{
-            z: z, x: x, y: y,
-            type: 'surface',
-            colorscale: 'Viridis',
-            showscale: false
-        }];
+        const data2 = [{ z: z, x: x, y: y, type: 'surface', colorscale: 'Viridis', showscale: false }];
         const layout2 = {
-            title: { text: 'Optimization Landscape (Finding Minimum)', font: { size: 14 } },
-            margin: { t: 40, b: 20, l: 20, r: 20 },
-            scene: {
-                xaxis: {title: 'Magnet 1'}, yaxis: {title: 'Magnet 2'}, zaxis: {title: 'Emittance'},
-                camera: {eye: {x: 1.5, y: 1.5, z: 1.2}}
-            },
+            title: { text: 'Optimization Landscape', font: { size: 14 } },
+            margin: { t: 30, b: 20, l: 20, r: 20 },
+            scene: { xaxis: {title: 'Mag 1'}, yaxis: {title: 'Mag 2'}, zaxis: {title: 'Emit'}, camera: {eye: {x: 1.5, y: 1.5, z: 1.2}} },
             paper_bgcolor: 'rgba(0,0,0,0)'
         };
         Plotly.newPlot('plot2', data2, layout2, {responsive: true, displayModeBar: false});
 
 
-        // Plot 3: Anomaly Detection Signal
+        // Plot 3: Anomaly Detection
         let time = 0;
         const data3_x = [], data3_y = [];
-        for (let i = 0; i < 100; i++) {
-            data3_x.push(i);
-            data3_y.push(Math.sin(i/5) + Math.random()*0.5);
-        }
-        const trace3 = { x: data3_x, y: data3_y, mode: 'lines', line: { color: '#2e7d32' }, name: 'BPM Signal' };
+        for (let i = 0; i < 100; i++) { data3_x.push(i); data3_y.push(Math.sin(i/5) + Math.random()*0.5); }
+        const trace3 = { x: data3_x, y: data3_y, mode: 'lines', line: { color: '#2e7d32' }, name: 'Signal' };
         const layout3 = {
-            title: { text: 'Real-time BPM Signal Monitoring', font: { size: 14 } },
-            margin: { t: 40, b: 40, l: 40, r: 20 },
-            xaxis: { title: 'Time', showgrid: false },
-            yaxis: { title: 'Position', range: [-3, 3] },
-            shapes: [], // For anomaly highlight
-            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            title: { text: 'BPM Signal Monitoring', font: { size: 14 } },
+            margin: { t: 30, b: 30, l: 30, r: 20 },
+            xaxis: { showgrid: false }, yaxis: { range: [-3, 3] },
+            shapes: [], paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
         };
         Plotly.newPlot('plot3', [trace3], layout3, {responsive: true, displayModeBar: false});
 
-        // Animate Plot 3 (Streaming data with anomaly)
         function updatePlot3() {
             time++;
             let newY = Math.sin((time+100)/5) + Math.random()*0.5;
-            
-            // Simulate Anomaly periodically
             let isAnomaly = (time % 150 > 120);
-            if (isAnomaly) { newY += (time % 150 - 120) * 0.1; } // Drift
+            if (isAnomaly) { newY += (time % 150 - 120) * 0.1; }
 
             Plotly.extendTraces('plot3', { y: [[newY]], x: [[time+100]] }, [0]);
             
-            // Highlight anomaly area
             const shapes = isAnomaly ? [{
-                type: 'rect', xref: 'paper', yref: 'paper',
-                x0: 0.8, y0: 0, x1: 1, y1: 1,
+                type: 'rect', xref: 'paper', yref: 'paper', x0: 0.85, y0: 0, x1: 1, y1: 1,
                 fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }
             }] : [];
 
-            Plotly.relayout('plot3', {
-                'xaxis.range': [time, time + 100],
-                'shapes': shapes
-            });
-
-            if(time > 1000) Plotly.deleteTraces('plot3', 0); // cleanup
+            Plotly.relayout('plot3', { 'xaxis.range': [time, time + 100], 'shapes': shapes });
+            if(time > 1000) Plotly.deleteTraces('plot3', 0);
             requestAnimationFrame(updatePlot3);
         }
         updatePlot3();
