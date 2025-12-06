@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Research Proposal: ML for LINAC Applications</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <style>
+        /* --- CSS VARIABLES & BASE STYLES --- */
         :root {
             --primary-color: #0d47a1;
             --secondary-color: #1565c0;
@@ -27,10 +34,10 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            padding-top: 70px;
+            padding-top: 70px; /* Space for fixed navbar */
         }
 
-        /* --- Navbar --- */
+        /* --- NAVBAR & NAVIGATION --- */
         .navbar {
             background: rgba(255, 255, 255, 0.98);
             height: 70px;
@@ -74,6 +81,7 @@
         }
         .nav-link:hover { color: var(--primary-color); }
 
+        /* Mobile Menu (Hamburger) */
         .hamburger { display: none; cursor: pointer; }
         .bar { display: block; width: 25px; height: 3px; margin: 5px auto; transition: 0.3s; background-color: var(--text-color); }
 
@@ -92,17 +100,18 @@
             .nav-item { margin: 15px 0; }
         }
 
-        /* --- Header --- */
+        /* --- HEADER --- */
         header {
             background: linear-gradient(135deg, var(--primary-color), #42a5f5);
             color: var(--white);
             padding: 40px 20px;
             text-align: center;
         }
+        header h1 { margin: 0; font-family: 'Prompt', sans-serif; }
 
         .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
 
-        /* --- Cards --- */
+        /* --- CARDS STYLES --- */
         .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
         
         .card {
@@ -114,16 +123,32 @@
             transition: 0.3s;
             display: flex;
             flex-direction: column;
+            position: relative; /* Essential for z-index context */
         }
+        
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         .card.highlight { border-top-color: var(--accent-color); background: linear-gradient(to bottom, #fffde7, #ffffff); }
 
+        /* Special class for when graph is fullscreen (Removes transform conflict) */
+        .card.has-fullscreen { 
+            transform: none !important; 
+            z-index: 10000; 
+        }
+
         .card h3 { font-family: 'Prompt', sans-serif; color: var(--primary-color); margin-top: 0; margin-bottom: 5px; font-size: 1.3rem; }
         .suitability { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 15px; display: block; }
+        
         .topic-head { font-weight: bold; color: var(--primary-color); font-size: 0.95rem; margin-top: 15px; display: block; }
         .topic-content { font-size: 0.9rem; margin-bottom: 5px; color: #333; text-align: left; }
+        
         .ref-box { background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 15px; font-size: 0.85rem; border-left: 3px solid #ccc; }
         
+        .math-box { 
+            background: #fff8e1; border: 1px solid #ffe0b2; 
+            border-radius: 8px; padding: 10px; margin: 10px 0; 
+            text-align: center; font-size: 0.9rem; color: #444; 
+        }
+
         .btn-link {
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             margin-top: 20px; padding: 10px 0; width: 100%;
@@ -133,7 +158,7 @@
         }
         .btn-link:hover { background: var(--primary-color); color: white; }
 
-        /* --- Visual Plot Containers --- */
+        /* --- VISUAL PLOT CONTAINERS (The Graphs) --- */
         .visual-plot-container {
             height: 280px;
             background: #ffffff;
@@ -147,58 +172,71 @@
             transition: all 0.3s ease-in-out;
         }
 
-        /* Fullscreen Mode Class */
+        /* Fullscreen Mode Styles */
         .visual-plot-container.fullscreen-mode {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 10000;
-            border-radius: 0;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            background: white;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 99999 !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            box-shadow: none !important;
+        }
+        
+        /* Force graph to fill screen */
+        .visual-plot-container.fullscreen-mode .plotly-graph-div {
+            height: 100vh !important;
+            width: 100vw !important;
         }
 
         .plotly-graph-div { flex-grow: 1; width: 100%; position: relative; z-index: 1; }
 
-        /* Expand Button */
-        .btn-expand {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 20;
-            background: rgba(255,255,255,0.8);
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 5px 10px;
-            color: #555;
-            transition: 0.2s;
-        }
-        .btn-expand:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .plot-caption { text-align: center; font-size: 0.8rem; color: #777; padding: 5px; background: #fafafa; border-top: 1px solid #eee; font-family: 'Prompt', sans-serif; }
 
-        /* Plot Caption */
-        .plot-caption {
-            text-align: center;
-            font-size: 0.8rem;
-            color: #777;
-            padding: 5px;
-            background: #fafafa;
-            border-top: 1px solid #eee;
-            font-family: 'Prompt', sans-serif;
+        /* --- GRAPH CONTROLS (Buttons & Help) --- */
+        .plot-controls { position: absolute; top: 10px; right: 10px; z-index: 20; display: flex; gap: 5px; }
+        
+        .btn-control {
+            background: rgba(255,255,255,0.95); border: 1px solid #ddd; border-radius: 4px;
+            cursor: pointer; padding: 6px 10px; color: #555; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; font-size: 0.9rem;
         }
+        .btn-control:hover { background: var(--primary-color); color: white; }
+        
+        /* Left side help button */
+        .btn-help-trigger { position: absolute; top: 10px; left: 10px; z-index: 20; } 
 
-        /* Tables & Opinion */
+        /* Help Overlay */
+        .help-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); z-index: 30;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: 0.3s;
+            text-align: center; padding: 20px; box-sizing: border-box;
+        }
+        .help-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .help-title { font-weight: bold; color: var(--primary-color); margin-bottom: 15px; font-size: 1.1rem; }
+        .help-item { margin-bottom: 10px; font-size: 0.9rem; color: #444; }
+        .help-icon { color: var(--accent-color); margin-right: 5px; width: 20px; display: inline-block; }
+        
+        .btn-close-help { margin-top: 15px; padding: 5px 15px; background: #eee; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-close-help:hover { background: #ddd; }
+
+        /* --- TABLES & OPINION --- */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-top: 20px; }
         table { width: 100%; min-width: 600px; border-collapse: collapse; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: #f1f8e9; color: var(--primary-color); }
+        
         .opinion-box { background: #e1f5fe; padding: 25px; border-radius: 10px; border-left: 5px solid var(--primary-color); margin-top: 30px; }
-        #backToTop { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 99; border: none; background-color: var(--accent-color); color: white; cursor: pointer; padding: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
+        #backToTop { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 99; border: none; background-color: var(--accent-color); color: white; cursor: pointer; padding: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; }
+        #backToTop:hover { transform: scale(1.1); }
 
     </style>
 </head>
@@ -206,11 +244,13 @@
 
     <nav class="navbar">
         <a href="#" class="nav-logo"><i class="fas fa-atom"></i> PBP-CMU ML</a>
+        
         <div class="hamburger">
             <span class="bar"></span>
             <span class="bar"></span>
             <span class="bar"></span>
         </div>
+
         <ul class="nav-menu">
             <li class="nav-item"><a href="#options" class="nav-link">Options</a></li>
             <li class="nav-item"><a href="#recommendation" class="nav-link">Recommendation</a></li>
@@ -229,6 +269,7 @@
         <h2 id="options" style="color: var(--primary-color); border-bottom: 2px solid #ddd; padding-bottom: 10px;">Research Options</h2>
         
         <div class="card-grid">
+            
             <div class="card highlight">
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <h3>1. Virtual Diagnostics</h3>
@@ -237,22 +278,36 @@
                 <span class="suitability">(เหมาะที่สุดสำหรับช่วงที่เครื่องยังรันไม่สมบูรณ์)</span>
                 
                 <div class="visual-plot-container" id="container1">
-                    <button class="btn-expand" onclick="toggleFullscreen('container1', 'plot1')"><i class="fas fa-expand"></i></button>
+                    <button class="btn-control btn-help-trigger" onclick="toggleHelp('help1')" title="วิธีใช้งาน"><i class="fas fa-question"></i></button>
+                    <div class="plot-controls">
+                        <button class="btn-control" onclick="toggleFullscreen('container1', 'plot1')" title="ขยายเต็มจอ"><i class="fas fa-expand"></i></button>
+                    </div>
+                    
+                    <div class="help-overlay" id="help1">
+                        <div class="help-title">🕹️ วิธีใช้งานกราฟ (Controls)</div>
+                        <div class="help-item"><strong>💻 PC:</strong> <span class="help-icon"><i class="fas fa-mouse"></i></span>คลิกซ้ายลาก (หมุน/เลื่อน)</div>
+                        <div class="help-item"><strong>🖱️ Zoom:</strong> <span class="help-icon"><i class="fas fa-search-plus"></i></span>หมุนลูกกลิ้งเมาส์</div>
+                        <div class="help-item"><strong>📱 Mobile:</strong> <span class="help-icon"><i class="fas fa-hand-pointer"></i></span>แตะลาก (หมุน) / จีบนิ้ว (ซูม)</div>
+                        <button class="btn-close-help" onclick="toggleHelp('help1')">ปิดคำแนะนำ</button>
+                    </div>
+
                     <div id="plot1" class="plotly-graph-div"></div>
-                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: การกระจายตัวของอนุภาคใน Phase Space ที่ทำนายโดย ML</div>
+                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: การกระจายตัวของอนุภาคใน Phase Space</div>
+                </div>
+
+                <div class="math-box">
+                    $$ \hat{\varepsilon} = f_{\theta}(\vec{I}_{\text{sol}}, \phi_{\text{RF}}, \vec{B}_{\text{quad}}) $$
+                    <small>Predicting Emittance ($\varepsilon$) using Neural Networks</small>
                 </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
-                <p class="topic-content">ปกติการวัด Transverse Emittance ต้องใช้เวลาสแกน และเป็นการรบกวนลำแสง (Destructive) ทำให้ไม่ทราบค่าคุณภาพลำแสงแบบ Real-time</p>
-
+                <p class="topic-content">การวัด Emittance ปกติรบกวนลำแสง (Destructive) ทำให้ไม่ทราบค่าคุณภาพลำแสงแบบ Real-time</p>
+                
                 <span class="topic-head">แนวทางวิจัย:</span>
-                <p class="topic-content">สร้างแบบจำลองคณิตศาสตร์ที่เรียนรู้จาก <strong>ข้อมูล Simulation (ASTRA)</strong> เพื่อหาความสัมพันธ์ระหว่างค่า Setting ของเครื่อง กับหน้าตัดของลำอิเล็กตรอน (Phase Space) ที่ปลายทาง</p>
-
-                <span class="topic-head">สิ่งที่ได้:</span>
-                <p class="topic-content">เครื่องมือที่สามารถ "ทำนาย" ค่า Emittance และรูปทรงของลำแสงได้ทันทีโดยไม่ต้องเอา Screen ไปขวางลำแสงจริง</p>
+                <p class="topic-content">สร้างแบบจำลองคณิตศาสตร์เรียนรู้จาก <strong>ข้อมูล Simulation (ASTRA)</strong> เพื่อทำนาย Phase Space จากค่า Setting ของเครื่อง</p>
 
                 <div class="ref-box">
-                    <strong>Reference (SLAC):</strong> ทีมวิจัยใช้ข้อมูล Simulation ร่วมกับข้อมูลจริง มาเทรนโมเดลเพื่อทำนายหน้าตาของ Phase Space ได้ทุกช็อต
+                    <strong>Reference (SLAC):</strong> ทีมวิจัยใช้ข้อมูล Simulation ร่วมกับข้อมูลจริง มาเทรนโมเดลเพื่อทำนาย Phase Space ได้ทุกช็อต
                 </div>
                 <a href="https://www.slac.stanford.edu/pubs/slacpubs/17250/slac-pub-17328.pdf" target="_blank" class="btn-link"><i class="fas fa-file-pdf"></i> Read SLAC Paper</a>
             </div>
@@ -262,22 +317,36 @@
                 <span class="suitability">(เหมาะสำหรับช่วยลดภาระการจูนเครื่อง)</span>
                 
                 <div class="visual-plot-container" id="container2">
-                    <button class="btn-expand" onclick="toggleFullscreen('container2', 'plot2')"><i class="fas fa-expand"></i></button>
+                    <button class="btn-control btn-help-trigger" onclick="toggleHelp('help2')" title="วิธีใช้งาน"><i class="fas fa-question"></i></button>
+                    <div class="plot-controls">
+                        <button class="btn-control" onclick="toggleFullscreen('container2', 'plot2')" title="ขยายเต็มจอ"><i class="fas fa-expand"></i></button>
+                    </div>
+                    
+                    <div class="help-overlay" id="help2">
+                        <div class="help-title">🕹️ วิธีใช้งานกราฟ 3D</div>
+                        <div class="help-item"><strong>💻 PC:</strong> คลิกซ้ายลากเพื่อหมุนมุมมอง</div>
+                        <div class="help-item"><strong>🖱️ Zoom:</strong> หมุนลูกกลิ้งเมาส์</div>
+                        <div class="help-item"><strong>📱 Mobile:</strong> แตะลากเพื่อหมุน / จีบนิ้วซูม</div>
+                        <button class="btn-close-help" onclick="toggleHelp('help2')">ปิดคำแนะนำ</button>
+                    </div>
+
                     <div id="plot2" class="plotly-graph-div"></div>
-                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: พื้นผิวความคลาดเคลื่อนที่ AI กำลังค้นหาจุดต่ำสุด (Minimum)</div>
+                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: พื้นผิวความคลาดเคลื่อนที่ AI กำลังค้นหาจุดต่ำสุด</div>
+                </div>
+
+                <div class="math-box">
+                    $$ \vec{x}^* = \underset{\vec{x}}{\operatorname{argmin}} \ \varepsilon(\vec{x}) $$
+                    <small>Bayesian Optimization searching for global minimum</small>
                 </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
-                <p class="topic-content">การปรับค่า RF/Magnet เพื่อให้ได้ Emittance ต่ำที่สุด เป็นปัญหาระบบหลายตัวแปร (Multivariable Problem) ที่ซับซ้อนและใช้เวลาจูนนาน</p>
+                <p class="topic-content">การปรับค่าให้ Emittance ต่ำที่สุด เป็นปัญหาหลายตัวแปรที่ซับซ้อน (Multivariable Problem)</p>
 
                 <span class="topic-head">แนวทางวิจัย:</span>
-                <p class="topic-content">พัฒนาระบบค้นหาจุดทำงาน (Operating Point) ที่ดีที่สุด โดยใช้ <strong>Bayesian Optimization</strong> เรียนรู้แนวโน้มเพื่อแนะนำว่าควรปรับค่า Magnet ตัวไหน เท่าไหร่ จึงจะได้ Target Parameter ที่ต้องการ</p>
-
-                <span class="topic-head">สิ่งที่ได้:</span>
-                <p class="topic-content">ช่วยลดเวลา Commissioning และช่วยให้น้องๆ จูนเครื่องเข้าสู่สภาวะที่ลำแสงมีคุณภาพดีที่สุดได้รวดเร็วขึ้น</p>
+                <p class="topic-content">ใช้ <strong>Bayesian Optimization</strong> เรียนรู้แนวโน้มเพื่อแนะนำค่า Magnet ที่ดีที่สุด (Operating Point) โดยอัตโนมัติ</p>
 
                 <div class="ref-box">
-                    <strong>Reference (KEK):</strong> ใช้ ML ช่วยจูนค่าแม่เหล็กและ RF เพื่อเพิ่มประจุและลดค่า Emittance ได้เร็วกว่าและแม่นยำกว่าการจูนด้วยมือ
+                    <strong>Reference (KEK):</strong> ใช้ ML ช่วยจูนค่าแม่เหล็กและ RF เพื่อเพิ่มประจุและลดค่า Emittance ได้เร็วกว่ามนุษย์
                 </div>
                 <a href="https://meow.elettra.eu/90/pdf/TUBC02.pdf" target="_blank" class="btn-link"><i class="fas fa-file-pdf"></i> Read KEK Paper</a>
             </div>
@@ -287,22 +356,36 @@
                 <span class="suitability">(เหมาะสำหรับงานดูแลระบบในระยะยาว)</span>
                 
                 <div class="visual-plot-container" id="container3">
-                    <button class="btn-expand" onclick="toggleFullscreen('container3', 'plot3')"><i class="fas fa-expand"></i></button>
+                    <button class="btn-control btn-help-trigger" onclick="toggleHelp('help3')" title="วิธีใช้งาน"><i class="fas fa-question"></i></button>
+                    <div class="plot-controls">
+                        <button class="btn-control" onclick="toggleFullscreen('container3', 'plot3')" title="ขยายเต็มจอ"><i class="fas fa-expand"></i></button>
+                    </div>
+                    
+                    <div class="help-overlay" id="help3">
+                        <div class="help-title">🕹️ วิธีใช้งานกราฟ</div>
+                        <div class="help-item"><strong>💻 PC:</strong> คลิกซ้ายลากเพื่อเลื่อน (Pan)</div>
+                        <div class="help-item"><strong>🖱️ Zoom:</strong> หมุนลูกกลิ้งเมาส์</div>
+                        <div class="help-item"><strong>📱 Mobile:</strong> แตะลากเพื่อเลื่อน / จีบนิ้วซูม</div>
+                        <button class="btn-close-help" onclick="toggleHelp('help3')">ปิดคำแนะนำ</button>
+                    </div>
+
                     <div id="plot3" class="plotly-graph-div"></div>
-                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: สัญญาณ BPM และการตรวจจับความผิดปกติ (พื้นที่สีแดง)</div>
+                    <div class="plot-caption"><i class="fas fa-info-circle"></i> Simulation: สัญญาณ BPM และการตรวจจับความผิดปกติ (สีแดง)</div>
+                </div>
+
+                <div class="math-box">
+                    $$ \text{Loss} = || S(t) - \hat{S}(t) ||^2 > \delta $$
+                    <small>Anomaly detected when reconstruction error > threshold</small>
                 </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
-                <p class="topic-content">เครื่องเร่งอนุภาคมักมีความผันผวน (Jitter) ของสัญญาณ RF หรืออุณหภูมิ ซึ่งส่งผลต่อความนิ่งของตำแหน่งและพลังงานของลำอิเล็กตรอน</p>
+                <p class="topic-content">ความผันผวน (Jitter) ของ RF หรืออุณหภูมิ ส่งผลต่อความนิ่งของลำอิเล็กตรอนและอาจทำให้เครื่อง Trip</p>
 
                 <span class="topic-head">แนวทางวิจัย:</span>
-                <p class="topic-content">วิเคราะห์ข้อมูลย้อนหลัง (BPM, RF) เพื่อเรียนรู้ "พฤติกรรมปกติ" และแจ้งเตือนเมื่อสัญญาณเริ่มมีแนวโน้มเบี่ยงเบนออกไป โดยใช้ <strong>LSTM Deep Learning</strong></p>
-
-                <span class="topic-head">สิ่งที่ได้:</span>
-                <p class="topic-content">ระบบ Monitoring แจ้งเตือนความผิดปกติ Hardware ล่วงหน้า ช่วยป้องกันความเสียหายและวิเคราะห์สาเหตุปัญหาได้แม่นยำ</p>
+                <p class="topic-content">วิเคราะห์ข้อมูลย้อนหลัง (BPM, RF) เพื่อเรียนรู้ "พฤติกรรมปกติ" และแจ้งเตือนเมื่อสัญญาณผิดปกติโดยใช้ <strong>LSTM Deep Learning</strong></p>
 
                 <div class="ref-box">
-                    <strong>Reference (JLab):</strong> ใช้ Deep Learning เรียนรู้ Pattern การวิ่งของลำแสงปกติ เพื่อแจ้งเตือนเมื่อ Orbit เริ่มเบี่ยงเบนผิดปกติก่อนระบบจะ Trip
+                    <strong>Reference (JLab):</strong> ใช้ Deep Learning เรียนรู้ Pattern ปกติ เพื่อแจ้งเตือนก่อนที่ Orbit จะเบี่ยงเบนจนระบบตัดการทำงาน
                 </div>
                 <a href="https://arxiv.org/abs/2401.15543" target="_blank" class="btn-link"><i class="fas fa-file-pdf"></i> Read JLab Paper</a>
             </div>
@@ -349,56 +432,57 @@
 
     <button id="backToTop" onclick="topFunction()"><i class="fas fa-arrow-up"></i></button>
 
-   <script>
-        // --- Fullscreen Toggle Logic (Fixed) ---
+    <script>
+        // --- 1. FULLSCREEN TOGGLE LOGIC (FIXED) ---
         function toggleFullscreen(containerId, plotId) {
             const container = document.getElementById(containerId);
-            const card = container.closest('.card'); // หาตัวการ์ดแม่
-            const btn = container.querySelector('.btn-expand i');
-            const graphDiv = document.getElementById(plotId);
+            const card = container.closest('.card');
+            const btn = container.querySelector('.plot-controls button i');
             
-            // สลับสถานะ Fullscreen
             container.classList.toggle('fullscreen-mode');
             const isFullscreen = container.classList.contains('fullscreen-mode');
             
             if (isFullscreen) {
-                // กรณี: ขยายเต็มจอ
-                btn.classList.remove('fa-expand');
+                // Open Fullscreen
+                btn.classList.remove('fa-expand'); 
                 btn.classList.add('fa-compress');
                 
-                // FIX: ปิด Transform ของการ์ดแม่ เพื่อให้กราฟทะลุออกมาเต็มจอได้
-                if (card) {
-                    card.style.transform = 'none'; 
-                    card.style.zIndex = '9999'; // ดันให้สูงกว่าทุกอัน
-                    card.style.position = 'relative'; // เพื่อให้ z-index ทำงาน
-                }
+                document.body.style.overflow = 'hidden'; // Stop scrolling
                 
-                document.body.style.overflow = 'hidden'; // ห้ามเลื่อนหน้าหลัง
+                // FIX: Add special class to card to remove transform and boost z-index
+                if(card) card.classList.add('has-fullscreen');
+
+                // Force Plotly resize
+                Plotly.relayout(plotId, { 'width': window.innerWidth, 'height': window.innerHeight });
+
             } else {
-                // กรณี: ย่อกลับ
-                btn.classList.remove('fa-compress');
+                // Close Fullscreen
+                btn.classList.remove('fa-compress'); 
                 btn.classList.add('fa-expand');
                 
-                // Restore: คืนค่าเดิมให้การ์ด
-                if (card) {
-                    card.style.transform = ''; 
-                    card.style.zIndex = '';
-                    card.style.position = '';
-                }
+                document.body.style.overflow = 'auto'; // Enable scrolling
+                
+                // Restore card state
+                if(card) card.classList.remove('has-fullscreen');
 
-                document.body.style.overflow = 'auto'; // ให้เลื่อนหน้าได้ปกติ
+                // Restore Plotly size (autosize)
+                Plotly.relayout(plotId, { 'width': null, 'height': null });
             }
 
-            // สั่งให้ Plotly วาดกราฟใหม่ให้พอดีกับขนาดจอ
-            setTimeout(() => {
-                Plotly.Plots.resize(graphDiv);
-            }, 50);
+            // Double check resize
+            setTimeout(() => { Plotly.Plots.resize(document.getElementById(plotId)); }, 50);
         }
 
-        // --- UI Scripts (ส่วนเมนูและการเลื่อนหน้า ยังคงเดิม) ---
+        // --- 2. HELP OVERLAY TOGGLE ---
+        function toggleHelp(helpId) {
+            const el = document.getElementById(helpId);
+            el.classList.toggle('active');
+        }
+
+        // --- 3. UI SCRIPTS (Menu, Scroll) ---
         const hamburger = document.querySelector(".hamburger");
         const navMenu = document.querySelector(".nav-menu");
-        
+
         if(hamburger) {
             hamburger.addEventListener("click", () => {
                 hamburger.classList.toggle("active");
@@ -412,41 +496,47 @@
         }));
 
         let mybutton = document.getElementById("backToTop");
-        window.onscroll = function() {scrollFunction()};
-        function scrollFunction() {
+        window.onscroll = function() {
             if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
                 if(mybutton) mybutton.style.display = "block";
             } else {
                 if(mybutton) mybutton.style.display = "none";
             }
-        }
+        };
+        
         function topFunction() {
             document.body.scrollTop = 0;
             document.documentElement.scrollTop = 0;
         }
 
-        // --- Scientific Plots Code (โค้ดสร้างกราฟส่วนเดิม) ---
-        
-        // Plot 1
+        // --- 4. SCIENTIFIC PLOTS CONFIGURATION ---
+        const commonConfig = { 
+            responsive: true, 
+            displayModeBar: false, 
+            scrollZoom: true // Enable scroll to zoom
+        };
+
+        // --- PLOT 1: Phase Space (Rotating) ---
         const trace1 = {
             x: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
             y: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
-            mode: 'markers', type: 'scatter', marker: { size: 3, color: '#0d47a1', opacity: 0.5 }
+            mode: 'markers', type: 'scatter', 
+            marker: { size: 4, color: '#0d47a1', opacity: 0.6 }
         };
         const layout1 = {
             title: { text: 'Phase Space (X vs X\')', font: { size: 14 } },
             margin: { t: 40, b: 40, l: 40, r: 20 },
             xaxis: { zeroline: true }, yaxis: { zeroline: true },
-            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            autosize: true, dragmode: 'pan'
         };
-        Plotly.newPlot('plot1', [trace1], layout1, {responsive: true, displayModeBar: false});
+        Plotly.newPlot('plot1', [trace1], layout1, commonConfig);
         
         let angle = 0;
         function animatePlot1() {
             angle += 0.05;
             const newX = trace1.x.map((x, i) => x * Math.cos(angle) - trace1.y[i] * Math.sin(angle));
             const newY = trace1.x.map((x, i) => x * Math.sin(angle) + trace1.y[i] * Math.cos(angle));
-            // เช็คว่า div ยังมีอยู่ไหมก่อน animate เพื่อป้องกัน error
             if(document.getElementById('plot1')) {
                 Plotly.animate('plot1', { data: [{x: newX, y: newY}] }, { transition: {duration: 0}, frame: {duration: 50, redraw: false} });
                 requestAnimationFrame(animatePlot1);
@@ -454,43 +544,56 @@
         }
         animatePlot1();
 
-        // Plot 2
-        const size = 20, x = new Array(size), y = new Array(size), z = new Array(size);
+        // --- PLOT 2: Optimization (3D Surface) ---
+        const size = 25, x = new Array(size), y = new Array(size), z = new Array(size);
         for(var i = 0; i < size; i++) { x[i] = i - size/2; y[i] = i - size/2; z[i] = new Array(size); }
         for(var i = 0; i < size; i++) { for(var j = 0; j < size; j++) { z[i][j] = (x[i]*x[i] + y[j]*y[j]) / 50 + Math.random()*0.5; } }
+        
         const data2 = [{ z: z, x: x, y: y, type: 'surface', colorscale: 'Viridis', showscale: false }];
         const layout2 = {
             title: { text: 'Optimization Landscape', font: { size: 14 } },
             margin: { t: 30, b: 20, l: 20, r: 20 },
-            scene: { xaxis: {title: 'Mag 1'}, yaxis: {title: 'Mag 2'}, zaxis: {title: 'Emit'}, camera: {eye: {x: 1.5, y: 1.5, z: 1.2}} },
-            paper_bgcolor: 'rgba(0,0,0,0)'
+            scene: { 
+                xaxis: {title: 'Mag 1'}, yaxis: {title: 'Mag 2'}, zaxis: {title: 'Emit'}, 
+                camera: {eye: {x: 1.5, y: 1.5, z: 1.2}} 
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)', autosize: true
         };
-        Plotly.newPlot('plot2', data2, layout2, {responsive: true, displayModeBar: false});
+        Plotly.newPlot('plot2', data2, layout2, commonConfig);
 
-        // Plot 3
+        // --- PLOT 3: Anomaly Detection (Streaming) ---
         let time = 0;
         const data3_x = [], data3_y = [];
         for (let i = 0; i < 100; i++) { data3_x.push(i); data3_y.push(Math.sin(i/5) + Math.random()*0.5); }
+        
         const trace3 = { x: data3_x, y: data3_y, mode: 'lines', line: { color: '#2e7d32' }, name: 'Signal' };
         const layout3 = {
             title: { text: 'BPM Signal Monitoring', font: { size: 14 } },
             margin: { t: 40, b: 40, l: 40, r: 20 },
             xaxis: { showgrid: false }, yaxis: { range: [-3, 3] },
-            shapes: [], paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            shapes: [], paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            autosize: true, dragmode: 'pan'
         };
-        Plotly.newPlot('plot3', [trace3], layout3, {responsive: true, displayModeBar: false});
+        Plotly.newPlot('plot3', [trace3], layout3, commonConfig);
         
         function updatePlot3() {
             time++;
             let newY = Math.sin((time+100)/5) + Math.random()*0.5;
-            let isAnomaly = (time % 150 > 120);
+            let isAnomaly = (time % 150 > 120); // Simulate anomaly every 150 frames
             if (isAnomaly) { newY += (time % 150 - 120) * 0.1; }
             
             if(document.getElementById('plot3')) {
                 Plotly.extendTraces('plot3', { y: [[newY]], x: [[time+100]] }, [0]);
-                const shapes = isAnomaly ? [{ type: 'rect', xref: 'paper', yref: 'paper', x0: 0.85, y0: 0, x1: 1, y1: 1, fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 } }] : [];
+                
+                const shapes = isAnomaly ? [{ 
+                    type: 'rect', xref: 'paper', yref: 'paper', 
+                    x0: 0.85, y0: 0, x1: 1, y1: 1, 
+                    fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 } 
+                }] : [];
+
                 Plotly.relayout('plot3', { 'xaxis.range': [time, time + 100], 'shapes': shapes });
-                if(time > 1000) Plotly.deleteTraces('plot3', 0);
+                
+                if(time > 1000) Plotly.deleteTraces('plot3', 0); // Cleanup old data
                 requestAnimationFrame(updatePlot3);
             }
         }
