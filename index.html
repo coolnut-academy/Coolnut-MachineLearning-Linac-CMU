@@ -6,6 +6,8 @@
     <title>Research Proposal: ML for LINAC Applications</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
     <style>
         :root {
             --primary-color: #0d47a1;
@@ -72,7 +74,6 @@
         }
         .nav-link:hover { color: var(--primary-color); }
 
-        /* Hamburger Menu */
         .hamburger { display: none; cursor: pointer; }
         .bar { display: block; width: 25px; height: 3px; margin: 5px auto; transition: 0.3s; background-color: var(--text-color); }
 
@@ -102,7 +103,7 @@
         .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
 
         /* --- Cards --- */
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
         
         .card {
             background: var(--white);
@@ -114,20 +115,14 @@
             display: flex;
             flex-direction: column;
         }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         .card.highlight { border-top-color: var(--accent-color); background: linear-gradient(to bottom, #fffde7, #ffffff); }
 
         .card h3 { font-family: 'Prompt', sans-serif; color: var(--primary-color); margin-top: 0; margin-bottom: 5px; font-size: 1.3rem; }
-        
         .suitability { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 15px; display: block; }
-
         .topic-head { font-weight: bold; color: var(--primary-color); font-size: 0.95rem; margin-top: 15px; display: block; }
         .topic-content { font-size: 0.9rem; margin-bottom: 5px; color: #333; text-align: left; }
-
-        .ref-box {
-            background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 15px; font-size: 0.85rem; border-left: 3px solid #ccc;
-        }
-
+        .ref-box { background: #f5f5f5; border-radius: 8px; padding: 10px; margin-top: 15px; font-size: 0.85rem; border-left: 3px solid #ccc; }
         .btn-link {
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             margin-top: 20px; padding: 10px 0; width: 100%;
@@ -137,23 +132,29 @@
         }
         .btn-link:hover { background: var(--primary-color); color: white; }
 
-        /* Visuals */
-        .visual-demo { height: 80px; background: #fafafa; margin: 10px 0; border-radius: 8px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #eee; }
-        .ellipse { width: 40px; height: 20px; border: 2px solid var(--primary-color); border-radius: 50%; animation: pulse 2s infinite; transform: rotate(-45deg); }
-        @keyframes pulse { 0% {transform: rotate(-45deg) scale(1);} 50% {transform: rotate(-30deg) scale(1.2);} 100% {transform: rotate(-45deg) scale(1);} }
-        .graph-line { width: 0; height: 100%; border-top: 2px solid orange; animation: graph 3s infinite linear; }
-        @keyframes graph { 0% {width:0;} 100% {width: 100px;} }
-        .signal { width: 10px; height: 10px; background: green; border-radius: 50%; animation: sig 2s infinite; }
-        @keyframes sig { 0% {transform:translateX(-30px); bg:green;} 50% {bg:red; transform:scale(1.5);} 100% {transform:translateX(30px); bg:green;} }
+        /* --- NEW Scientific Visuals Containers --- */
+        .visual-plot-container {
+            height: 250px; /* Increased height for better plots */
+            background: #ffffff;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            overflow: hidden;
+            position: relative;
+        }
+        /* Loading placeholder */
+        .visual-plot-container::before {
+             content: 'Loading Simulation...'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 0.8rem; z-index: 0;
+        }
+        .plotly-graph-div { position: relative; z-index: 1; height: 100%; width: 100%; }
+
 
         /* Tables & Opinion */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-top: 20px; }
         table { width: 100%; min-width: 600px; border-collapse: collapse; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: #f1f8e9; color: var(--primary-color); }
-        
         .opinion-box { background: #e1f5fe; padding: 25px; border-radius: 10px; border-left: 5px solid var(--primary-color); margin-top: 30px; }
-
         #backToTop { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 99; border: none; background-color: var(--accent-color); color: white; cursor: pointer; padding: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
     </style>
@@ -190,21 +191,23 @@
                     <h3>1. Virtual Diagnostics</h3>
                     <span style="background:var(--accent-color); color:white; padding:2px 8px; border-radius:10px; font-size:0.65rem; font-weight:bold;">RECOMMENDED</span>
                 </div>
-                <span class="suitability">(เหมาะที่สุดสำหรับช่วงที่เครื่องยังรันไม่สมบูรณ์ หรือขาดเครื่องมือวัดบางจุด)</span>
+                <span class="suitability">(เหมาะที่สุดสำหรับช่วงที่เครื่องยังรันไม่สมบูรณ์)</span>
                 
-                <div class="visual-demo"><div class="ellipse"></div></div>
+                <div class="visual-plot-container">
+                    <div id="plot1" class="plotly-graph-div"></div>
+                </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
-                <p class="topic-content">ปกติการวัด Transverse Emittance ต้องใช้เวลาสแกน (Quadrupole scan) และเป็นการรบกวนลำแสง (Destructive) ทำให้เราไม่ทราบค่าคุณภาพลำแสงแบบ Real-time ในทุกๆ ช็อต</p>
+                <p class="topic-content">ปกติการวัด Transverse Emittance ต้องใช้เวลาสแกน และเป็นการรบกวนลำแสง (Destructive) ทำให้ไม่ทราบค่าคุณภาพลำแสงแบบ Real-time</p>
 
                 <span class="topic-head">แนวทางวิจัย:</span>
-                <p class="topic-content">สร้างแบบจำลองคณิตศาสตร์ที่เรียนรู้จาก <strong>ข้อมูล Simulation (ASTRA/GEANT4)</strong> ของอาจารย์ เพื่อหาความสัมพันธ์ระหว่างค่า Setting ของเครื่อง (เช่น กระแสไฟ Solenoid/Quad, RF Phase) กับหน้าตัดของลำอิเล็กตรอน (Phase Space)</p>
+                <p class="topic-content">สร้างแบบจำลองคณิตศาสตร์ที่เรียนรู้จาก <strong>ข้อมูล Simulation (ASTRA)</strong> เพื่อหาความสัมพันธ์ระหว่างค่า Setting ของเครื่อง กับหน้าตัดของลำอิเล็กตรอน (Phase Space) ที่ปลายทาง</p>
 
                 <span class="topic-head">สิ่งที่ได้:</span>
-                <p class="topic-content">เครื่องมือที่สามารถ "ทำนาย" ค่า Emittance และรูปทรงของลำแสงได้ทันทีจากการอ่านค่า Setting โดยไม่ต้องเอา Screen ไปขวางลำแสงจริง และใช้เทียบเคียงผลเมื่อเครื่องจริงเดินเครื่องได้</p>
+                <p class="topic-content">เครื่องมือที่สามารถ "ทำนาย" ค่า Emittance และรูปทรงของลำแสงได้ทันทีโดยไม่ต้องเอา Screen ไปขวางลำแสงจริง</p>
 
                 <div class="ref-box">
-                    <strong>Reference (SLAC):</strong> ทีมวิจัยใช้ข้อมูล Simulation ร่วมกับข้อมูลจริง มาเทรนโมเดลเพื่อทำนายหน้าตาของ Phase Space ได้ทุกช็อตโดยไม่ต้องหยุดเดินเครื่อง
+                    <strong>Reference (SLAC):</strong> ทีมวิจัยใช้ข้อมูล Simulation ร่วมกับข้อมูลจริง มาเทรนโมเดลเพื่อทำนายหน้าตาของ Phase Space ได้ทุกช็อต
                 </div>
                 <a href="https://www.slac.stanford.edu/pubs/slacpubs/17250/slac-pub-17328.pdf" target="_blank" class="btn-link"><i class="fas fa-file-pdf"></i> Read SLAC Paper</a>
             </div>
@@ -213,13 +216,15 @@
                 <h3>2. Optimization</h3>
                 <span class="suitability">(เหมาะสำหรับช่วยลดภาระการจูนเครื่อง)</span>
                 
-                <div class="visual-demo"><div class="graph-line"></div></div>
+                <div class="visual-plot-container">
+                    <div id="plot2" class="plotly-graph-div"></div>
+                </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
-                <p class="topic-content">การปรับค่า RF Gun และระบบแม่เหล็กเพื่อให้ได้ Emittance ต่ำที่สุด หรือ Charge สูงสุด เป็นปัญหาระบบหลายตัวแปร (Multivariable Problem) ที่ซับซ้อนและใช้เวลาจูนนาน</p>
+                <p class="topic-content">การปรับค่า RF/Magnet เพื่อให้ได้ Emittance ต่ำที่สุด เป็นปัญหาระบบหลายตัวแปร (Multivariable Problem) ที่ซับซ้อนและใช้เวลาจูนนาน</p>
 
                 <span class="topic-head">แนวทางวิจัย:</span>
-                <p class="topic-content">พัฒนาระบบค้นหาจุดทำงาน (Operating Point) ที่ดีที่สุด โดยใช้ <strong>Bayesian Optimization</strong> เรียนรู้แนวโน้มการเปลี่ยนแปลงของลำแสง เพื่อแนะนำว่าควรปรับค่า Magnet ตัวไหน เท่าไหร่ จึงจะได้ Target Parameter ที่ต้องการ</p>
+                <p class="topic-content">พัฒนาระบบค้นหาจุดทำงาน (Operating Point) ที่ดีที่สุด โดยใช้ <strong>Bayesian Optimization</strong> เรียนรู้แนวโน้มเพื่อแนะนำว่าควรปรับค่า Magnet ตัวไหน เท่าไหร่ จึงจะได้ Target Parameter ที่ต้องการ</p>
 
                 <span class="topic-head">สิ่งที่ได้:</span>
                 <p class="topic-content">ช่วยลดเวลา Commissioning และช่วยให้น้องๆ จูนเครื่องเข้าสู่สภาวะที่ลำแสงมีคุณภาพดีที่สุดได้รวดเร็วขึ้น</p>
@@ -234,13 +239,15 @@
                 <h3>3. Anomaly Detection</h3>
                 <span class="suitability">(เหมาะสำหรับงานดูแลระบบในระยะยาว)</span>
                 
-                <div class="visual-demo"><div class="signal"></div></div>
+                <div class="visual-plot-container">
+                    <div id="plot3" class="plotly-graph-div"></div>
+                </div>
 
                 <span class="topic-head">โจทย์ทางฟิสิกส์:</span>
                 <p class="topic-content">เครื่องเร่งอนุภาคมักมีความผันผวน (Jitter) ของสัญญาณ RF หรืออุณหภูมิ ซึ่งส่งผลต่อความนิ่งของตำแหน่งและพลังงานของลำอิเล็กตรอน</p>
 
                 <span class="topic-head">แนวทางวิจัย:</span>
-                <p class="topic-content">วิเคราะห์ข้อมูลย้อนหลัง (BPM, RF) เพื่อเรียนรู้ "พฤติกรรมปกติ" (Normal Operation Signature) และแจ้งเตือนเมื่อสัญญาณเริ่มมีแนวโน้มเบี่ยงเบนออกไป ก่อนที่จะเกิด Beam Loss โดยใช้ <strong>LSTM Deep Learning</strong></p>
+                <p class="topic-content">วิเคราะห์ข้อมูลย้อนหลัง (BPM, RF) เพื่อเรียนรู้ "พฤติกรรมปกติ" และแจ้งเตือนเมื่อสัญญาณเริ่มมีแนวโน้มเบี่ยงเบนออกไป โดยใช้ <strong>LSTM Deep Learning</strong></p>
 
                 <span class="topic-head">สิ่งที่ได้:</span>
                 <p class="topic-content">ระบบ Monitoring แจ้งเตือนความผิดปกติ Hardware ล่วงหน้า ช่วยป้องกันความเสียหายและวิเคราะห์สาเหตุปัญหาได้แม่นยำ</p>
@@ -294,19 +301,17 @@
     <button id="backToTop" onclick="topFunction()"><i class="fas fa-arrow-up"></i></button>
 
     <script>
+        // --- UI Scripts ---
         const hamburger = document.querySelector(".hamburger");
         const navMenu = document.querySelector(".nav-menu");
-
         hamburger.addEventListener("click", () => {
             hamburger.classList.toggle("active");
             navMenu.classList.toggle("active");
         });
-
         document.querySelectorAll(".nav-link").forEach(n => n.addEventListener("click", () => {
             hamburger.classList.remove("active");
             navMenu.classList.remove("active");
         }));
-
         let mybutton = document.getElementById("backToTop");
         window.onscroll = function() {scrollFunction()};
         function scrollFunction() {
@@ -320,6 +325,119 @@
             document.body.scrollTop = 0;
             document.documentElement.scrollTop = 0;
         }
+
+        // --- Scientific Plots (Plotly.js) ---
+
+        // Plot 1: Phase Space (Virtual Diagnostics)
+        const trace1 = {
+            x: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
+            y: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
+            mode: 'markers',
+            type: 'scatter',
+            marker: { size: 3, color: '#0d47a1', opacity: 0.5 }
+        };
+        const layout1 = {
+            title: { text: 'Predicted Phase Space (X vs X\')', font: { size: 14 } },
+            margin: { t: 40, b: 40, l: 40, r: 20 },
+            xaxis: { title: 'Position (X)', showgrid: true, zeroline: true },
+            yaxis: { title: 'Angle (X\')', showgrid: true, zeroline: true },
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+        };
+        Plotly.newPlot('plot1', [trace1], layout1, {responsive: true, displayModeBar: false});
+
+        // Animate Plot 1 (Rotation simulation)
+        let angle = 0;
+        function animatePlot1() {
+            angle += 0.05;
+            const newX = trace1.x.map((x, i) => x * Math.cos(angle) - trace1.y[i] * Math.sin(angle));
+            const newY = trace1.x.map((x, i) => x * Math.sin(angle) + trace1.y[i] * Math.cos(angle));
+            Plotly.animate('plot1', {
+                data: [{x: newX, y: newY}]
+            }, {
+                transition: {duration: 0}, frame: {duration: 50, redraw: false}
+            });
+            requestAnimationFrame(animatePlot1);
+        }
+        animatePlot1();
+
+
+        // Plot 2: 3D Optimization Landscape
+        const size = 20, x = new Array(size), y = new Array(size), z = new Array(size);
+        for(var i = 0; i < size; i++) {
+            x[i] = i - size/2;
+            y[i] = i - size/2;
+            z[i] = new Array(size);
+        }
+        for(var i = 0; i < size; i++) {
+            for(var j = 0; j < size; j++) {
+                // Paraboloid valley function representing Emittance
+                z[i][j] = (x[i]*x[i] + y[j]*y[j]) / 50 + Math.random()*0.5;
+            }
+        }
+        const data2 = [{
+            z: z, x: x, y: y,
+            type: 'surface',
+            colorscale: 'Viridis',
+            showscale: false
+        }];
+        const layout2 = {
+            title: { text: 'Optimization Landscape (Finding Minimum)', font: { size: 14 } },
+            margin: { t: 40, b: 20, l: 20, r: 20 },
+            scene: {
+                xaxis: {title: 'Magnet 1'}, yaxis: {title: 'Magnet 2'}, zaxis: {title: 'Emittance'},
+                camera: {eye: {x: 1.5, y: 1.5, z: 1.2}}
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+        Plotly.newPlot('plot2', data2, layout2, {responsive: true, displayModeBar: false});
+
+
+        // Plot 3: Anomaly Detection Signal
+        let time = 0;
+        const data3_x = [], data3_y = [];
+        for (let i = 0; i < 100; i++) {
+            data3_x.push(i);
+            data3_y.push(Math.sin(i/5) + Math.random()*0.5);
+        }
+        const trace3 = { x: data3_x, y: data3_y, mode: 'lines', line: { color: '#2e7d32' }, name: 'BPM Signal' };
+        const layout3 = {
+            title: { text: 'Real-time BPM Signal Monitoring', font: { size: 14 } },
+            margin: { t: 40, b: 40, l: 40, r: 20 },
+            xaxis: { title: 'Time', showgrid: false },
+            yaxis: { title: 'Position', range: [-3, 3] },
+            shapes: [], // For anomaly highlight
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+        };
+        Plotly.newPlot('plot3', [trace3], layout3, {responsive: true, displayModeBar: false});
+
+        // Animate Plot 3 (Streaming data with anomaly)
+        function updatePlot3() {
+            time++;
+            let newY = Math.sin((time+100)/5) + Math.random()*0.5;
+            
+            // Simulate Anomaly periodically
+            let isAnomaly = (time % 150 > 120);
+            if (isAnomaly) { newY += (time % 150 - 120) * 0.1; } // Drift
+
+            Plotly.extendTraces('plot3', { y: [[newY]], x: [[time+100]] }, [0]);
+            
+            // Highlight anomaly area
+            const shapes = isAnomaly ? [{
+                type: 'rect', xref: 'paper', yref: 'paper',
+                x0: 0.8, y0: 0, x1: 1, y1: 1,
+                fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }
+            }] : [];
+
+            Plotly.relayout('plot3', {
+                'xaxis.range': [time, time + 100],
+                'shapes': shapes
+            });
+
+            if(time > 1000) Plotly.deleteTraces('plot3', 0); // cleanup
+            requestAnimationFrame(updatePlot3);
+        }
+        updatePlot3();
+
     </script>
 </body>
 </html>
