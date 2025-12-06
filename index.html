@@ -349,49 +349,75 @@
 
     <button id="backToTop" onclick="topFunction()"><i class="fas fa-arrow-up"></i></button>
 
-    <script>
-        // --- Fullscreen Toggle Logic ---
+   <script>
+        // --- Fullscreen Toggle Logic (Fixed) ---
         function toggleFullscreen(containerId, plotId) {
             const container = document.getElementById(containerId);
+            const card = container.closest('.card'); // หาตัวการ์ดแม่
             const btn = container.querySelector('.btn-expand i');
             const graphDiv = document.getElementById(plotId);
             
+            // สลับสถานะ Fullscreen
             container.classList.toggle('fullscreen-mode');
+            const isFullscreen = container.classList.contains('fullscreen-mode');
             
-            if (container.classList.contains('fullscreen-mode')) {
+            if (isFullscreen) {
+                // กรณี: ขยายเต็มจอ
                 btn.classList.remove('fa-expand');
                 btn.classList.add('fa-compress');
-                document.body.style.overflow = 'hidden'; // Stop background scrolling
+                
+                // FIX: ปิด Transform ของการ์ดแม่ เพื่อให้กราฟทะลุออกมาเต็มจอได้
+                if (card) {
+                    card.style.transform = 'none'; 
+                    card.style.zIndex = '9999'; // ดันให้สูงกว่าทุกอัน
+                    card.style.position = 'relative'; // เพื่อให้ z-index ทำงาน
+                }
+                
+                document.body.style.overflow = 'hidden'; // ห้ามเลื่อนหน้าหลัง
             } else {
+                // กรณี: ย่อกลับ
                 btn.classList.remove('fa-compress');
                 btn.classList.add('fa-expand');
-                document.body.style.overflow = 'auto';
+                
+                // Restore: คืนค่าเดิมให้การ์ด
+                if (card) {
+                    card.style.transform = ''; 
+                    card.style.zIndex = '';
+                    card.style.position = '';
+                }
+
+                document.body.style.overflow = 'auto'; // ให้เลื่อนหน้าได้ปกติ
             }
 
-            // Force Plotly to resize to the new container size
+            // สั่งให้ Plotly วาดกราฟใหม่ให้พอดีกับขนาดจอ
             setTimeout(() => {
                 Plotly.Plots.resize(graphDiv);
             }, 50);
         }
 
-        // --- UI Scripts ---
+        // --- UI Scripts (ส่วนเมนูและการเลื่อนหน้า ยังคงเดิม) ---
         const hamburger = document.querySelector(".hamburger");
         const navMenu = document.querySelector(".nav-menu");
-        hamburger.addEventListener("click", () => {
-            hamburger.classList.toggle("active");
-            navMenu.classList.toggle("active");
-        });
+        
+        if(hamburger) {
+            hamburger.addEventListener("click", () => {
+                hamburger.classList.toggle("active");
+                navMenu.classList.toggle("active");
+            });
+        }
+
         document.querySelectorAll(".nav-link").forEach(n => n.addEventListener("click", () => {
-            hamburger.classList.remove("active");
-            navMenu.classList.remove("active");
+            if(hamburger) hamburger.classList.remove("active");
+            if(navMenu) navMenu.classList.remove("active");
         }));
+
         let mybutton = document.getElementById("backToTop");
         window.onscroll = function() {scrollFunction()};
         function scrollFunction() {
             if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-                mybutton.style.display = "block";
+                if(mybutton) mybutton.style.display = "block";
             } else {
-                mybutton.style.display = "none";
+                if(mybutton) mybutton.style.display = "none";
             }
         }
         function topFunction() {
@@ -399,40 +425,39 @@
             document.documentElement.scrollTop = 0;
         }
 
-        // --- Scientific Plots (Plotly.js) ---
-
-        // Plot 1: Phase Space
+        // --- Scientific Plots Code (โค้ดสร้างกราฟส่วนเดิม) ---
+        
+        // Plot 1
         const trace1 = {
             x: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
             y: Array.from({length: 500}, () => (Math.random() - 0.5) * 2),
-            mode: 'markers', type: 'scatter',
-            marker: { size: 3, color: '#0d47a1', opacity: 0.5 }
+            mode: 'markers', type: 'scatter', marker: { size: 3, color: '#0d47a1', opacity: 0.5 }
         };
         const layout1 = {
             title: { text: 'Phase Space (X vs X\')', font: { size: 14 } },
-            margin: { t: 30, b: 30, l: 30, r: 20 },
+            margin: { t: 40, b: 40, l: 40, r: 20 },
             xaxis: { zeroline: true }, yaxis: { zeroline: true },
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
         };
         Plotly.newPlot('plot1', [trace1], layout1, {responsive: true, displayModeBar: false});
-
+        
         let angle = 0;
         function animatePlot1() {
             angle += 0.05;
             const newX = trace1.x.map((x, i) => x * Math.cos(angle) - trace1.y[i] * Math.sin(angle));
             const newY = trace1.x.map((x, i) => x * Math.sin(angle) + trace1.y[i] * Math.cos(angle));
-            Plotly.animate('plot1', { data: [{x: newX, y: newY}] }, { transition: {duration: 0}, frame: {duration: 50, redraw: false} });
-            requestAnimationFrame(animatePlot1);
+            // เช็คว่า div ยังมีอยู่ไหมก่อน animate เพื่อป้องกัน error
+            if(document.getElementById('plot1')) {
+                Plotly.animate('plot1', { data: [{x: newX, y: newY}] }, { transition: {duration: 0}, frame: {duration: 50, redraw: false} });
+                requestAnimationFrame(animatePlot1);
+            }
         }
         animatePlot1();
 
-
-        // Plot 2: 3D Optimization
+        // Plot 2
         const size = 20, x = new Array(size), y = new Array(size), z = new Array(size);
         for(var i = 0; i < size; i++) { x[i] = i - size/2; y[i] = i - size/2; z[i] = new Array(size); }
-        for(var i = 0; i < size; i++) {
-            for(var j = 0; j < size; j++) { z[i][j] = (x[i]*x[i] + y[j]*y[j]) / 50 + Math.random()*0.5; }
-        }
+        for(var i = 0; i < size; i++) { for(var j = 0; j < size; j++) { z[i][j] = (x[i]*x[i] + y[j]*y[j]) / 50 + Math.random()*0.5; } }
         const data2 = [{ z: z, x: x, y: y, type: 'surface', colorscale: 'Viridis', showscale: false }];
         const layout2 = {
             title: { text: 'Optimization Landscape', font: { size: 14 } },
@@ -442,36 +467,32 @@
         };
         Plotly.newPlot('plot2', data2, layout2, {responsive: true, displayModeBar: false});
 
-
-        // Plot 3: Anomaly Detection
+        // Plot 3
         let time = 0;
         const data3_x = [], data3_y = [];
         for (let i = 0; i < 100; i++) { data3_x.push(i); data3_y.push(Math.sin(i/5) + Math.random()*0.5); }
         const trace3 = { x: data3_x, y: data3_y, mode: 'lines', line: { color: '#2e7d32' }, name: 'Signal' };
         const layout3 = {
             title: { text: 'BPM Signal Monitoring', font: { size: 14 } },
-            margin: { t: 30, b: 30, l: 30, r: 20 },
+            margin: { t: 40, b: 40, l: 40, r: 20 },
             xaxis: { showgrid: false }, yaxis: { range: [-3, 3] },
             shapes: [], paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
         };
         Plotly.newPlot('plot3', [trace3], layout3, {responsive: true, displayModeBar: false});
-
+        
         function updatePlot3() {
             time++;
             let newY = Math.sin((time+100)/5) + Math.random()*0.5;
             let isAnomaly = (time % 150 > 120);
             if (isAnomaly) { newY += (time % 150 - 120) * 0.1; }
-
-            Plotly.extendTraces('plot3', { y: [[newY]], x: [[time+100]] }, [0]);
             
-            const shapes = isAnomaly ? [{
-                type: 'rect', xref: 'paper', yref: 'paper', x0: 0.85, y0: 0, x1: 1, y1: 1,
-                fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 }
-            }] : [];
-
-            Plotly.relayout('plot3', { 'xaxis.range': [time, time + 100], 'shapes': shapes });
-            if(time > 1000) Plotly.deleteTraces('plot3', 0);
-            requestAnimationFrame(updatePlot3);
+            if(document.getElementById('plot3')) {
+                Plotly.extendTraces('plot3', { y: [[newY]], x: [[time+100]] }, [0]);
+                const shapes = isAnomaly ? [{ type: 'rect', xref: 'paper', yref: 'paper', x0: 0.85, y0: 0, x1: 1, y1: 1, fillcolor: 'rgba(255, 0, 0, 0.2)', line: { width: 0 } }] : [];
+                Plotly.relayout('plot3', { 'xaxis.range': [time, time + 100], 'shapes': shapes });
+                if(time > 1000) Plotly.deleteTraces('plot3', 0);
+                requestAnimationFrame(updatePlot3);
+            }
         }
         updatePlot3();
 
